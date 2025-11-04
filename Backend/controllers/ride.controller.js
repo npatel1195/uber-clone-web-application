@@ -17,27 +17,27 @@ module.exports.createRide = async (req, res) => {
         const ride = await rideService.createRide({ user: req.user._id, pickup, destination, vehicleType });
         res.status(201).json(ride);
 
-        const pickupCoordinates = await mapService.getAddressCoordinate(pickup);
+        // Fire-and-forget side effects; do not affect response lifecycle
+        (async () => {
+            try {
+                const pickupCoordinates = await mapService.getAddressCoordinate(pickup);
+                const captainsInRadius = await mapService.getCaptainsInTheRadius(pickupCoordinates.ltd, pickupCoordinates.lng, 2);
 
+                ride.otp = "";
+                const rideWithUser = await rideModel.findOne({ _id: ride._id }).populate('user');
 
-
-        const captainsInRadius = await mapService.getCaptainsInTheRadius(pickupCoordinates.ltd, pickupCoordinates.lng, 2);
-
-        ride.otp = ""
-
-        const rideWithUser = await rideModel.findOne({ _id: ride._id }).populate('user');
-
-        captainsInRadius.map(captain => {
-
-            sendMessageToSocketId(captain.socketId, {
-                event: 'new-ride',
-                data: rideWithUser
-            })
-
-        })
+                captainsInRadius.forEach(captain => {
+                    sendMessageToSocketId(captain.socketId, {
+                        event: 'new-ride',
+                        data: rideWithUser
+                    });
+                });
+            } catch (bgErr) {
+                console.error('Background ride notification error:', bgErr.message);
+            }
+        })();
 
     } catch (err) {
-
         console.log(err);
         return res.status(500).json({ message: err.message });
     }
@@ -129,5 +129,5 @@ module.exports.endRide = async (req, res) => {
         return res.status(200).json(ride);
     } catch (err) {
         return res.status(500).json({ message: err.message });
-    } s
+    }
 }

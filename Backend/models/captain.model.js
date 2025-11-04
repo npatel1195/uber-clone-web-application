@@ -45,7 +45,9 @@ const captainSchema = new mongoose.Schema({
         plate: {
             type: String,
             required: true,
+            match: [ /^[A-Za-z0-9]{3,8}$/, 'Plate must be alphanumeric and between 3 to 8 characters long' ],
             minlength: [ 3, 'Plate must be at least 3 characters long' ],
+            maxlength: [ 8, 'Plate must be at most 8 characters long' ],
         },
         capacity: {
             type: Number,
@@ -55,7 +57,7 @@ const captainSchema = new mongoose.Schema({
         vehicleType: {
             type: String,
             required: true,
-            enum: [ 'car', 'motorcycle', 'auto' ],
+            enum: [ 'car', 'taxi', 'auto' ],
         }
     },
 

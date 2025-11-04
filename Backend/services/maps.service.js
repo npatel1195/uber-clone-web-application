@@ -78,10 +78,11 @@ module.exports.getCaptainsInTheRadius = async (ltd, lng, radius) => {
     // radius in km
 
 
+    // Mongo expects [lng, lat] order
     const captains = await captainModel.find({
         location: {
             $geoWithin: {
-                $centerSphere: [ [ ltd, lng ], radius / 6371 ]
+                $centerSphere: [ [ lng, ltd ], radius / 6371 ]
             }
         }
     });
